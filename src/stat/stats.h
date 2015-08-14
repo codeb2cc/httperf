@@ -36,8 +36,8 @@
 
 #include <math.h>
 
-#define SQUARE(f)	((f)*(f))
-#define VAR(s,s2,n)	(((n) < 2) ? 0.0 : ((s2) - SQUARE(s)/(n)) / ((n) - 1))
-#define STDDEV(s,s2,n)	(((n) < 2) ? 0.0 : sqrt (VAR ((s), (s2), (n))))
+#define SQUARE(f)    ((f)*(f))
+#define VAR(s, s2, n)    (((n) < 2) ? 0.0 : ((s2) - SQUARE(s)/(n)) / ((n) - 1))
+#define STDDEV(s, s2, n)    (((n) < 2) ? 0.0 : sqrt (VAR ((s), (s2), (n))))
 
 #endif /* stats_h */

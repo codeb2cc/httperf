@@ -38,41 +38,39 @@
 # define object_is_call(o)	(((Object *) (o))->type == OBJ_CALL)
 # define object_is_sess(o)	(((Object *) (o))->type == OBJ_SESS)
 #else
-# define object_is_conn(o)	1
-# define object_is_call(o)	1
-# define object_is_sess(o)	1
+# define object_is_conn(o)    1
+# define object_is_call(o)    1
+# define object_is_sess(o)    1
 #endif
 
-typedef enum Object_Type
-  {
-    OBJ_CONN,			/* connection object */
-    OBJ_CALL,			/* call object */
-    OBJ_SESS,			/* session object */
-    OBJ_NUM_TYPES
-  }
-Object_Type;
+typedef enum Object_Type {
+    OBJ_CONN, /* connection object */
+            OBJ_CALL, /* call object */
+            OBJ_SESS, /* session object */
+            OBJ_NUM_TYPES
+}
+        Object_Type;
 
-typedef struct Object
-  {
+typedef struct Object {
     Object_Type type;
-    u_int ref_count;			/* # of references to this object */
-  }
-Object;
+    u_int ref_count;            /* # of references to this object */
+}
+        Object;
 
 /* This may be called during httperf initialize to reserve SIZE
    "private" bytes in objects of type TYPE.  The return value is the
    offset of the private area.  */
 
-extern size_t object_expand (Object_Type type, size_t size);
+extern size_t object_expand(Object_Type type, size_t size);
 
 /* Create a new object of type TYPE.  */
-extern Object *object_new (Object_Type type);
+extern Object *object_new(Object_Type type);
 
 /* Create a new reference for object OBJ.  */
-#define object_inc_ref(o)	(++(o)->ref_count)
+#define object_inc_ref(o)    (++(o)->ref_count)
 
 /* Decrement the reference for object OBJ.  If the reference count
    reaches zero, the object's destroy function is called.  */
-extern void object_dec_ref (Object *obj);
+extern void object_dec_ref(Object *obj);
 
 #endif /* object_h */

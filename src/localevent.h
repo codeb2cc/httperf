@@ -34,8 +34,7 @@
 #ifndef localevent_h
 #define localevent_h
 
-typedef enum Event_Type
-  {
+typedef enum Event_Type {
     EV_NULL = 0,
     EV_PERF_SAMPLE,
 
@@ -49,10 +48,10 @@ typedef enum Event_Type
     EV_CONN_NEW,
     EV_CONN_CONNECTING,
     EV_CONN_CONNECTED,
-    EV_CONN_CLOSE,		/* connection closed */
-    EV_CONN_DESTROYED,
-    EV_CONN_FAILED,		/* failed for reasons other than timeout */
-    EV_CONN_TIMEOUT,
+    EV_CONN_CLOSE, /* connection closed */
+            EV_CONN_DESTROYED,
+    EV_CONN_FAILED, /* failed for reasons other than timeout */
+            EV_CONN_TIMEOUT,
 
     EV_CALL_NEW,
     EV_CALL_ISSUE,
@@ -68,23 +67,23 @@ typedef enum Event_Type
     EV_CALL_DESTROYED,
 
     EV_NUM_EVENT_TYPES
-  }
-Event_Type;
+}
+        Event_Type;
 
-typedef struct Event
-  {
+typedef struct Event {
     Event_Type type;
     Object *obj;
     Any_Type arg;
-  }
-Event;
+}
+        Event;
 
-typedef void (*Event_Handler) (Event_Type type, Object *obj,
-			       Any_Type registration_time_arg,
-			       Any_Type signal_time_arg);
+typedef void (*Event_Handler)(Event_Type type, Object *obj,
+                              Any_Type registration_time_arg,
+                              Any_Type signal_time_arg);
 
-extern void event_register_handler (Event_Type et, Event_Handler handler,
-				    Any_Type arg);
-extern void event_signal (Event_Type type, Object *obj, Any_Type arg);
+extern void event_register_handler(Event_Type et, Event_Handler handler,
+                                   Any_Type arg);
+
+extern void event_signal(Event_Type type, Object *obj, Any_Type arg);
 
 #endif /* localevent_h */

@@ -35,120 +35,112 @@
 #include <generic_types.h>
 
 struct Node {
-	Any_Type        data;
-	struct Node    *next;
+    Any_Type data;
+    struct Node *next;
 };
 
 struct List {
-	struct Node    *dummy_head;
+    struct Node *dummy_head;
 };
 
 bool
-is_list_empty(struct List *l)
-{
+is_list_empty(struct List *l) {
 
-	return l->dummy_head->next == NULL;
+    return l->dummy_head->next == NULL;
 }
 
-struct List    *
-list_create()
-{
-	struct List    *l;
+struct List *
+list_create() {
+    struct List *l;
 
-	if ((l = malloc(sizeof(struct List))) == NULL)
-		goto create_error;
+    if ((l = malloc(sizeof(struct List))) == NULL)
+        goto create_error;
 
-	if ((l->dummy_head = malloc(sizeof(struct Node))) == NULL)
-		goto create_error;
+    if ((l->dummy_head = malloc(sizeof(struct Node))) == NULL)
+        goto create_error;
 
-	l->dummy_head->next = NULL;
+    l->dummy_head->next = NULL;
 
-	return l;
+    return l;
 
-      create_error:
-	if (l != NULL)
-		free(l);
+    create_error:
+    if (l != NULL)
+        free(l);
 
-	return NULL;
+    return NULL;
 }
 
 void
-list_free(struct List *l)
-{
-	free(l->dummy_head);
-	l->dummy_head = NULL;
-	free(l);
+list_free(struct List *l) {
+    free(l->dummy_head);
+    l->dummy_head = NULL;
+    free(l);
 }
 
 bool
-list_push(struct List *l, Any_Type data)
-{
-	struct Node    *n;
+list_push(struct List *l, Any_Type data) {
+    struct Node *n;
 
-	/*
-	 * TODO: Implement caching so that we don't have to call
-	 * malloc every time we push a new node onto the list
-	 */
-	if ((n = malloc(sizeof(struct Node))) == NULL) {
-		return false;
-	}
+    /*
+     * TODO: Implement caching so that we don't have to call
+     * malloc every time we push a new node onto the list
+     */
+    if ((n = malloc(sizeof(struct Node))) == NULL) {
+        return false;
+    }
 
-	n->data = data;
-	n->next = l->dummy_head->next;
-	l->dummy_head->next = n;
+    n->data = data;
+    n->next = l->dummy_head->next;
+    l->dummy_head->next = n;
 
-	return true;
+    return true;
 }
 
 Any_Type
-list_top(struct List * l)
-{
-	return l->dummy_head->next->data;
+list_top(struct List *l) {
+    return l->dummy_head->next->data;
 }
 
 Any_Type
-list_pop(struct List * l)
-{
-	Any_Type        data;
-	struct Node    *n;
+list_pop(struct List *l) {
+    Any_Type data;
+    struct Node *n;
 
-	n = l->dummy_head->next;
-	data = l->dummy_head->next->data;
-	l->dummy_head->next = l->dummy_head->next->next;
+    n = l->dummy_head->next;
+    data = l->dummy_head->next->data;
+    l->dummy_head->next = l->dummy_head->next->next;
 
-	/*
-	 * TODO: As per above, implement caching here so that this memory
-	 * does not have to be freed
-	 */
-	free(n);
+    /*
+     * TODO: As per above, implement caching here so that this memory
+     * does not have to be freed
+     */
+    free(n);
 
-	return data;
+    return data;
 }
 
 void
-list_remove_if_true(struct List *l, bool (*action) (Any_Type))
-{
-	struct Node    *n = l->dummy_head;
+list_remove_if_true(struct List *l, bool (*action)(Any_Type)) {
+    struct Node *n = l->dummy_head;
 
-	while (n->next != NULL) {
-		if ((*action) (n->next->data)) {
-			struct Node    *oldnext = n->next;
-			n->next = n->next->next;
-			free(oldnext);
-		} else
-			n = n->next;
-	}
+    while (n->next != NULL) {
+        if ((*action)(n->next->data)) {
+            struct Node *oldnext = n->next;
+            n->next = n->next->next;
+            free(oldnext);
+        } else
+            n = n->next;
+    }
 
 }
 
 void
-list_for_each(struct List *l, int (*action) (Any_Type))
-{
-	struct Node    *n = l->dummy_head->next;
+list_for_each(struct List *l, int (*action)(Any_Type)) {
+    struct Node *n = l->dummy_head->next;
 
-	while (n != NULL) {
-		(*action) (n->data);
-		n = n->next;
-	}
+    while (n != NULL) {
+        (*action)(n->data);
+        n = n->next;
+    }
 }
 

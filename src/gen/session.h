@@ -36,24 +36,24 @@
 
 #include <sess.h>
 
-extern void session_init (void);	/* initialize session module */
+extern void session_init(void);    /* initialize session module */
 
 /* Maximum number of calls that can be queued on a session.  */
-extern size_t session_max_qlen (Sess *sess);
+extern size_t session_max_qlen(Sess * sess);
 
 /* Current number of calls that are queued on the session.  */
-extern size_t session_current_qlen (Sess *sess);
+extern size_t session_current_qlen(Sess * sess);
 
 /* Issue call CALL on session SESS.  Returns negative number in case
    of failure.  */
-extern int session_issue_call (Sess *sess, Call *call);
+extern int session_issue_call(Sess * sess, Call * call);
 
 /* Given a connection object, find the session object that the
    connection belongs to.  */
-extern Sess *session_get_sess_from_conn (Conn *conn);
+extern Sess *session_get_sess_from_conn(Conn * conn);
 
 /* Given a call object, find the session object that the call
    belongs to.  */
-extern Sess *session_get_sess_from_call (Call *call);
+extern Sess *session_get_sess_from_call(Call * call);
 
 #endif /* session_h */

@@ -35,19 +35,19 @@
 #include <stdbool.h>
 
 typedef union {
-	char            c;
-	int             i;
-	long            l;
-	u_char          uc;
-	u_int           ui;
-	u_long          ul;
-	u_wide          uw;
-	float           f;
-	double          d;
-	void           *vp;
-	const void     *cvp;
+    char c;
+    int i;
+    long l;
+    u_char uc;
+    u_int ui;
+    u_long ul;
+    u_wide uw;
+    float f;
+    double d;
+    void *vp;
+    const void *cvp;
 } Any_Type;
 
-typedef double  Time;
+typedef double Time;
 
 #endif /* generic_types_h */

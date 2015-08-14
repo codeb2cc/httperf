@@ -46,23 +46,20 @@
 #include <conn.h>
 
 void
-conn_init (Conn *conn)
-{
-  conn->hostname = param.server;
-  conn->hostname_len = strlen (param.server);
-  conn->port = param.port;
-  conn->sd = -1;
-  conn->myport = -1;
-  conn->line.iov_base = conn->line_buf;
-  if (param.server_name)
-    {
-      conn->fqdname = param.server_name;
-      conn->fqdname_len = strlen (param.server_name);
+conn_init(Conn * conn) {
+    conn->hostname = param.server;
+    conn->hostname_len = strlen(param.server);
+    conn->port = param.port;
+    conn->sd = -1;
+    conn->myport = -1;
+    conn->line.iov_base = conn->line_buf;
+    if (param.server_name) {
+        conn->fqdname = param.server_name;
+        conn->fqdname_len = strlen(param.server_name);
     }
-  else
-    {
-      conn->fqdname = conn->hostname;
-      conn->fqdname_len = conn->hostname_len;
+    else {
+        conn->fqdname = conn->hostname;
+        conn->fqdname_len = conn->hostname_len;
     }
 
 #ifdef HAVE_SSL
@@ -89,13 +86,12 @@ conn_init (Conn *conn)
 }
 
 void
-conn_deinit (Conn *conn)
-{
-  assert (conn->sd < 0 && conn->state != S_FREE);
-  assert (!conn->sendq);
-  assert (!conn->recvq);
-  assert (!conn->watchdog);
-  conn->state = S_FREE;
+conn_deinit(Conn * conn) {
+    assert(conn->sd < 0 && conn->state != S_FREE);
+    assert(!conn->sendq);
+    assert(!conn->recvq);
+    assert(!conn->watchdog);
+    conn->state = S_FREE;
 
 #ifdef HAVE_SSL
   if (param.use_ssl)

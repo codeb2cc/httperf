@@ -33,21 +33,27 @@
 #define timer_h
 
 struct Timer;
-typedef void    (*Timer_Callback) (struct Timer * t, Any_Type arg);
 
-Time     timer_now_forced(void);
-Time     timer_now(void);
+typedef void    (*Timer_Callback)(struct Timer *t, Any_Type arg);
 
-bool      timer_init(void);
-void     timer_reset_all(void);
-void     timer_free_all(void);
+Time timer_now_forced(void);
+
+Time timer_now(void);
+
+bool timer_init(void);
+
+void timer_reset_all(void);
+
+void timer_free_all(void);
+
 /*
  * Needs to be called at least once every TIMER_INTERVAL: 
  */
-void     timer_tick(void);
+void timer_tick(void);
 
-struct Timer   *timer_schedule(Timer_Callback timeout, Any_Type arg,
-			       Time delay);
-void     timer_cancel(struct Timer * t);
+struct Timer *timer_schedule(Timer_Callback timeout, Any_Type arg,
+                             Time delay);
+
+void timer_cancel(struct Timer *t);
 
 #endif /* timer_h */

@@ -37,132 +37,125 @@
 #define Minimum_Heap_Size 10
 
 struct Heap {
-	u_long          array_size;
-	u_long          num_elements;
-	bool            (*compare) (Any_Type, Any_Type);
-	Any_Type        storage[];	/* c99 Flexible Array Member */
+    u_long array_size;
+    u_long num_elements;
+
+    bool            (*compare)(Any_Type, Any_Type);
+
+    Any_Type storage[];    /* c99 Flexible Array Member */
 };
 
-struct Heap    *
-create_heap(u_long size, bool(*compare_callback) (Any_Type, Any_Type))
-{
-	struct Heap    *h;
+struct Heap *
+create_heap(u_long size, bool(*compare_callback)(Any_Type, Any_Type)) {
+    struct Heap *h;
 
-	if (size < Minimum_Heap_Size)
-		size = Minimum_Heap_Size;
+    if (size < Minimum_Heap_Size)
+        size = Minimum_Heap_Size;
 
-	/*
-	 * We are using c99 Flexible Array Members so we can do this :) 
-	 */
-	h = malloc(sizeof(struct Heap) + sizeof(Any_Type) * size);
-	if (!h)
-		return NULL;
+    /*
+     * We are using c99 Flexible Array Members so we can do this :)
+     */
+    h = malloc(sizeof(struct Heap) + sizeof(Any_Type) * size);
+    if (!h)
+        return NULL;
 
-	h->array_size = size;
-	h->num_elements = 0;
-	h->compare = compare_callback;
+    h->array_size = size;
+    h->num_elements = 0;
+    h->compare = compare_callback;
 
-	return h;
+    return h;
 }
 
 bool
-is_heap_empty(struct Heap * h)
-{
-	return h->num_elements == 0;
+is_heap_empty(struct Heap *h) {
+    return h->num_elements == 0;
 }
 
 bool
-is_heap_full(struct Heap * h)
-{
-	return h->array_size == h->num_elements;
+is_heap_full(struct Heap *h) {
+    return h->array_size == h->num_elements;
 }
 
 u_long
-num_heap_elements(struct Heap * h)
-{
-	return h->num_elements;
+num_heap_elements(struct Heap *h) {
+    return h->num_elements;
 }
 
 void
-free_heap(struct Heap *h)
-{
-	if (h != NULL)
-		free(h);
+free_heap(struct Heap *h) {
+    if (h != NULL)
+        free(h);
 }
 
-#define PARENT(i)	(i/2)
+#define PARENT(i)    (i/2)
+
 bool
-insert(Any_Type a, struct Heap *h)
-{
-	u_long          i;
+insert(Any_Type a, struct Heap *h) {
+    u_long i;
 
-	if (is_heap_full(h))
-		return false;
+    if (is_heap_full(h))
+        return false;
 
-	i = ++h->num_elements;
+    i = ++h->num_elements;
 
-	/*
-	 * find the correct place to insert
-	 */
-	while ((i > 1) && (*h->compare) (h->storage[PARENT(i)], a)) {
-		h->storage[i] = h->storage[PARENT(i)];
-		i = PARENT(i);
-	}
-	h->storage[i] = a;
-	return true;
+    /*
+     * find the correct place to insert
+     */
+    while ((i > 1) && (*h->compare)(h->storage[PARENT(i)], a)) {
+        h->storage[i] = h->storage[PARENT(i)];
+        i = PARENT(i);
+    }
+    h->storage[i] = a;
+    return true;
 }
 
 static void
-percolate(struct Heap *h, u_long hole)
-{
-	int             child;
-	Any_Type        dest_val = h->storage[hole];
+percolate(struct Heap *h, u_long hole) {
+    int child;
+    Any_Type dest_val = h->storage[hole];
 
-	for (; hole * 2 <= h->num_elements; hole = child) {
-		child = hole * 2;
-		if (child != h->num_elements
-		    && (*h->compare) (h->storage[child + 1],
-				      h->storage[child + 1]))
-			child++;
-		if ((*h->compare) (h->storage[child + 1], dest_val))
-			h->storage[hole] = h->storage[child];
-		else
-			break;
-	}
-	h->storage[hole] = dest_val;
+    for (; hole * 2 <= h->num_elements; hole = child) {
+        child = hole * 2;
+        if (child != h->num_elements
+            && (*h->compare)(h->storage[child + 1],
+                             h->storage[child + 1]))
+            child++;
+        if ((*h->compare)(h->storage[child + 1], dest_val))
+            h->storage[hole] = h->storage[child];
+        else
+            break;
+    }
+    h->storage[hole] = dest_val;
 }
 
 Any_Type
-remove_min(struct Heap *h)
-{
-	if (is_heap_empty(h)) {
-		Any_Type temp = {0};
-		return temp;
-	}
-	else {
-		Any_Type        min = h->storage[1];
-		h->storage[1] = h->storage[h->num_elements--];
-		percolate(h, 1);
+remove_min(struct Heap *h) {
+    if (is_heap_empty(h)) {
+        Any_Type temp = {0};
+        return temp;
+    }
+    else {
+        Any_Type min = h->storage[1];
+        h->storage[1] = h->storage[h->num_elements--];
+        percolate(h, 1);
 
-		return min;
-	}
+        return min;
+    }
 }
 
 Any_Type
-poll_min(struct Heap * h)
-{
-	if (is_heap_empty(h)) {
-		Any_Type temp = {0};
-		return temp;
-	}
-	else
-		return h->storage[1];
+poll_min(struct Heap *h) {
+    if (is_heap_empty(h)) {
+        Any_Type temp = {0};
+        return temp;
+    }
+    else
+        return h->storage[1];
 }
 
 void
-heap_for_each(struct Heap *h, void (*action) (Any_Type))
-{
-	for (u_long i = 1; i <= h->num_elements; i++) {
-		(*action) (h->storage[i]);
-	}
+heap_for_each(struct Heap *h, void (*action)(Any_Type)) {
+    for (u_long i = 1; i <= h->num_elements; i++) {
+        (*action)(h->storage[i]);
+    }
 }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2007 Ted Bullock <tbullock@canada.com>
  * 
@@ -32,16 +31,23 @@
 #ifndef list_h
 #define list_h
 
-typedef bool    (*list_action) (Any_Type);
+typedef bool    (*list_action)(Any_Type);
 struct List;
 
-struct List    *list_create();
-void            list_free(struct List *);
-bool            list_push(struct List *, Any_Type);
-bool            is_list_empty(struct List *);
-Any_Type        list_top(struct List *);
-Any_Type        list_pop(struct List *);
-void            list_remove_if_true(struct List *, list_action);
-void            list_for_each(struct List *, list_action);
+struct List *list_create();
+
+void list_free(struct List *);
+
+bool list_push(struct List *, Any_Type);
+
+bool is_list_empty(struct List *);
+
+Any_Type list_top(struct List *);
+
+Any_Type list_pop(struct List *);
+
+void list_remove_if_true(struct List *, list_action);
+
+void list_for_each(struct List *, list_action);
 
 #endif /* list_h */

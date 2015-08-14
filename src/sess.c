@@ -40,13 +40,11 @@
 #include <sess.h>
 
 void
-sess_init (Sess *sess)
-{
+sess_init(Sess * sess) {
 }
 
 void
-sess_deinit (Sess *sess)
-{
+sess_deinit(Sess * sess) {
 #ifdef HAVE_SSL
   if (sess->ssl)
     SSL_free (sess->ssl);
@@ -54,16 +52,15 @@ sess_deinit (Sess *sess)
 }
 
 void
-sess_failure (Sess *sess)
-{
-  Any_Type arg;
+sess_failure(Sess * sess) {
+    Any_Type arg;
 
-  if (sess->failed)
-    return;
-  sess->failed = 1;
+    if (sess->failed)
+        return;
+    sess->failed = 1;
 
-  arg.l = 0;
-  event_signal (EV_SESS_FAILED, (Object *) sess, arg);
+    arg.l = 0;
+    event_signal(EV_SESS_FAILED, (Object *) sess, arg);
 
-  sess_dec_ref (sess);
+    sess_dec_ref(sess);
 }

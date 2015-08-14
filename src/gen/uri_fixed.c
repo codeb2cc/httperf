@@ -49,27 +49,25 @@
 static size_t uri_len;
 
 static void
-set_uri (Event_Type et, Call *call)
-{
-  assert (et == EV_CALL_NEW && object_is_call (call));
-  call_set_uri (call, param.uri, uri_len);
+set_uri(Event_Type et, Call *call) {
+    assert(et == EV_CALL_NEW && object_is_call(call));
+    call_set_uri(call, param.uri, uri_len);
 }
 
 static void
-init (void)
-{
-  Any_Type arg;
+init(void) {
+    Any_Type arg;
 
-  uri_len = strlen (param.uri);
+    uri_len = strlen(param.uri);
 
-  arg.l = 0;
-  event_register_handler (EV_CALL_NEW, (Event_Handler) set_uri, arg);
+    arg.l = 0;
+    event_register_handler(EV_CALL_NEW, (Event_Handler) set_uri, arg);
 }
 
 Load_Generator uri_fixed =
-  {
-    "fixed url",
-    init,
-    no_op,
-    no_op
-  };
+        {
+                "fixed url",
+                init,
+                no_op,
+                no_op
+        };

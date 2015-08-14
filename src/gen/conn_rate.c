@@ -55,51 +55,47 @@ static int num_conns_destroyed;
 static Rate_Generator rg;
 
 static int
-make_conn (Any_Type arg)
-{
-  Conn *s;
+make_conn(Any_Type arg) {
+    Conn *s;
 
-  if (num_conns_generated++ >= param.num_conns)
-    return -1;
+    if (num_conns_generated++ >= param.num_conns)
+        return -1;
 
-  s = conn_new ();
-  if (!s)
-    return -1;
+    s = conn_new();
+    if (!s)
+        return -1;
 
-  core_connect (s);
-  return 0;
+    core_connect(s);
+    return 0;
 }
 
 static void
-destroyed (void)
-{
-  if (++num_conns_destroyed >= param.num_conns)
-    core_exit ();
+destroyed(void) {
+    if (++num_conns_destroyed >= param.num_conns)
+        core_exit();
 }
 
 static void
-init (void)
-{
-  Any_Type arg;
+init(void) {
+    Any_Type arg;
 
-  rg.arg.l = 0;
-  rg.tick = make_conn;
+    rg.arg.l = 0;
+    rg.tick = make_conn;
 
-  arg.l = 0;
-  event_register_handler (EV_CONN_DESTROYED, (Event_Handler) destroyed, arg);
+    arg.l = 0;
+    event_register_handler(EV_CONN_DESTROYED, (Event_Handler) destroyed, arg);
 }
 
 static void
-start (void)
-{
-  rg.rate = &param.rate;
-  rate_generator_start (&rg, EV_CONN_DESTROYED);
+start(void) {
+    rg.rate = &param.rate;
+    rate_generator_start(&rg, EV_CONN_DESTROYED);
 }
 
 Load_Generator conn_rate =
-  {
-    "creates connections at a fixed rate",
-    init,
-    start,
-    no_op
-  };
+        {
+                "creates connections at a fixed rate",
+                init,
+                start,
+                no_op
+        };

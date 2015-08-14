@@ -43,39 +43,35 @@
 static u_long next_id = 0;
 
 void
-call_init (Call *c)
-{
-# define DEFAULT_METHOD	"GET"
+call_init(Call * c) {
+# define DEFAULT_METHOD    "GET"
 
-  c->id = next_id++;
-  call_set_method (c, DEFAULT_METHOD, sizeof (DEFAULT_METHOD) - 1);
-  c->req.version = param.http_version;
-  c->req.iov[IE_BLANK].iov_base = (caddr_t) " ";
-  c->req.iov[IE_BLANK].iov_len = 1;
-  c->req.iov[IE_NEWLINE1].iov_base = (caddr_t) "\r\n";
-  c->req.iov[IE_NEWLINE1].iov_len = 2;
-  c->req.iov[IE_NEWLINE2].iov_base = (caddr_t) "\r\n";
-  c->req.iov[IE_NEWLINE2].iov_len = 2;
+    c->id = next_id++;
+    call_set_method(c, DEFAULT_METHOD, sizeof(DEFAULT_METHOD) - 1);
+    c->req.version = param.http_version;
+    c->req.iov[IE_BLANK].iov_base = (caddr_t) " ";
+    c->req.iov[IE_BLANK].iov_len = 1;
+    c->req.iov[IE_NEWLINE1].iov_base = (caddr_t) "\r\n";
+    c->req.iov[IE_NEWLINE1].iov_len = 2;
+    c->req.iov[IE_NEWLINE2].iov_base = (caddr_t) "\r\n";
+    c->req.iov[IE_NEWLINE2].iov_len = 2;
 }
 
 void
-call_deinit (Call *call)
-{
+call_deinit(Call * call) {
 }
 
 int
-call_append_request_header (Call *c, const char *hdr, size_t len)
-{
-  u_int num_hdrs = c->req.num_extra_hdrs;
+call_append_request_header(Call *c, const char *hdr, size_t len) {
+    u_int num_hdrs = c->req.num_extra_hdrs;
 
-  if (num_hdrs >= MAX_EXTRA_HEADERS)
-    {
-      fprintf (stderr, "%s.call_append_request_header: max headers "
-	       "(%d) exceeded.\n", prog_name, MAX_EXTRA_HEADERS);
-      return -1;
+    if (num_hdrs >= MAX_EXTRA_HEADERS) {
+        fprintf(stderr, "%s.call_append_request_header: max headers "
+                "(%d) exceeded.\n", prog_name, MAX_EXTRA_HEADERS);
+        return -1;
     }
-  c->req.iov[IE_FIRST_HEADER + num_hdrs].iov_base = (caddr_t) hdr;
-  c->req.iov[IE_FIRST_HEADER + num_hdrs].iov_len = len;
-  c->req.num_extra_hdrs = num_hdrs + 1;
-  return 0;
+    c->req.iov[IE_FIRST_HEADER + num_hdrs].iov_base = (caddr_t) hdr;
+    c->req.iov[IE_FIRST_HEADER + num_hdrs].iov_len = len;
+    c->req.num_extra_hdrs = num_hdrs + 1;
+    return 0;
 }

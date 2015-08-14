@@ -33,14 +33,22 @@
 
 struct Queue;
 
-struct Queue   *create_queue(u_long);
-int             is_queue_empty(struct Queue *);
-int             is_queue_full(struct Queue *);
-void            free_queue(struct Queue *);
-int             enqueue(Any_Type, struct Queue *);
-Any_Type        get_front(struct Queue *);
-void            dequeue(struct Queue *);
-Any_Type        get_front_and_dequeue(struct Queue *);
-void			print_vp(struct Queue *);
+struct Queue *create_queue(u_long);
+
+int is_queue_empty(struct Queue *);
+
+int is_queue_full(struct Queue *);
+
+void free_queue(struct Queue *);
+
+int enqueue(Any_Type, struct Queue *);
+
+Any_Type get_front(struct Queue *);
+
+void dequeue(struct Queue *);
+
+Any_Type get_front_and_dequeue(struct Queue *);
+
+void print_vp(struct Queue *);
 
 #endif /* queue_h */

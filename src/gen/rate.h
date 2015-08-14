@@ -37,22 +37,26 @@
 #include <httperf.h>
 #include <timer.h>
 
-typedef struct Rate_Generator
-  {
-    u_short xsubi[3];		/* used for random number generation */
+typedef struct Rate_Generator {
+    u_short xsubi[3];
+    /* used for random number generation */
     Rate_Info *rate;
     Time start;
     Time next_time;
     Any_Type arg;
     struct Timer *timer;
-    int (*tick) (Any_Type arg);
-    int done;
-    Time (*next_interarrival_time) (struct Rate_Generator *rg);
-  }
-Rate_Generator;
 
-extern void rate_generator_start (Rate_Generator *rg,
-				  Event_Type completion_event);
-extern void rate_generator_stop (Rate_Generator *rg);
+    int (*tick)(Any_Type arg);
+
+    int done;
+
+    Time (*next_interarrival_time)(struct Rate_Generator *rg);
+}
+        Rate_Generator;
+
+extern void rate_generator_start(Rate_Generator *rg,
+                                 Event_Type completion_event);
+
+extern void rate_generator_stop(Rate_Generator *rg);
 
 #endif /* rate_h */

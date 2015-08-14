@@ -37,104 +37,95 @@
 #define Minimum_Wheel_Size 10
 
 struct Queue {
-	u_long          wheel_size;
-	u_long          num_elements;
-	u_long          first_element;
-	u_long          last_element;
-	Any_Type        wheel[];	/* c99 Flexible Array Member */
+    u_long wheel_size;
+    u_long num_elements;
+    u_long first_element;
+    u_long last_element;
+    Any_Type wheel[];    /* c99 Flexible Array Member */
 };
 
 static void
-empty_queue(struct Queue *q)
-{
-	q->num_elements = 0;
-	q->first_element = 1;
-	q->last_element = 0;
+empty_queue(struct Queue *q) {
+    q->num_elements = 0;
+    q->first_element = 1;
+    q->last_element = 0;
 
-	for (u_long i = 0; i < q->wheel_size; i++)
-		q->wheel[i].uw = 0;
+    for (u_long i = 0; i < q->wheel_size; i++)
+        q->wheel[i].uw = 0;
 }
 
-struct Queue   *
-create_queue(u_long size)
-{
-	struct Queue   *q;
+struct Queue *
+create_queue(u_long size) {
+    struct Queue *q;
 
-	if (size < Minimum_Wheel_Size)
-		size = Minimum_Wheel_Size;
+    if (size < Minimum_Wheel_Size)
+        size = Minimum_Wheel_Size;
 
-	/*
-	 * Again, we are using c99 Flexible Array Members so we can do this :) 
-	 */
-	q = malloc(sizeof(struct Queue) + sizeof(Any_Type) * size);
-	if (q == NULL)
-		return NULL;
-	
-	q->wheel_size = size;
-	empty_queue(q);
+    /*
+     * Again, we are using c99 Flexible Array Members so we can do this :)
+     */
+    q = malloc(sizeof(struct Queue) + sizeof(Any_Type) * size);
+    if (q == NULL)
+        return NULL;
 
-	return q;
-}
+    q->wheel_size = size;
+    empty_queue(q);
 
-int
-is_queue_empty(struct Queue *q)
-{
-	return q->num_elements == 0;
+    return q;
 }
 
 int
-is_queue_full(struct Queue *q)
-{
-	return q->num_elements == q->wheel_size;
+is_queue_empty(struct Queue *q) {
+    return q->num_elements == 0;
+}
+
+int
+is_queue_full(struct Queue *q) {
+    return q->num_elements == q->wheel_size;
 }
 
 void
-free_queue(struct Queue *q)
-{
-	if (q != NULL) {
-		empty_queue(q);
-		free(q);
-	}
+free_queue(struct Queue *q) {
+    if (q != NULL) {
+        empty_queue(q);
+        free(q);
+    }
 }
 
 int
-enqueue(Any_Type a, struct Queue *q)
-{
-	if (is_queue_full(q))
-		return 0;
-	
-	q->num_elements++;
+enqueue(Any_Type a, struct Queue *q) {
+    if (is_queue_full(q))
+        return 0;
 
-	if (++q->last_element == q->wheel_size)
-		q->last_element = 0;
+    q->num_elements++;
 
-	q->wheel[q->last_element] = a;
+    if (++q->last_element == q->wheel_size)
+        q->last_element = 0;
 
-	return 1;
+    q->wheel[q->last_element] = a;
+
+    return 1;
 }
 
 void
-dequeue(struct Queue *q)
-{
-	q->num_elements--;
+dequeue(struct Queue *q) {
+    q->num_elements--;
 
-	if (++q->first_element == q->wheel_size)
-		q->first_element = 0;
+    if (++q->first_element == q->wheel_size)
+        q->first_element = 0;
 
 }
 
 Any_Type
-get_front(struct Queue *q)
-{
-	return q->wheel[q->first_element];
+get_front(struct Queue *q) {
+    return q->wheel[q->first_element];
 }
 
 Any_Type
-get_front_and_dequeue(struct Queue * q)
-{
-	Any_Type        a = get_front(q);
-	dequeue(q);
+get_front_and_dequeue(struct Queue *q) {
+    Any_Type a = get_front(q);
+    dequeue(q);
 
-	return a;
+    return a;
 
 }

@@ -64,89 +64,91 @@ static size_t method_len;
    includes them in future calls to the server.  */
 
 static const char *
-unescape (const char *str, size_t *len)
-{
-  char *dp, *dst = strdup (str);
-  const char *cp;
-  int ch;
+unescape(const char *str, size_t *len) {
+    char *dp, *dst = strdup(str);
+    const char *cp;
+    int ch;
 
-  if (!dst)
-    panic ("%s: strdup() failed: %s\n", prog_name, strerror (errno));
+    if (!dst)
+        panic("%s: strdup() failed: %s\n", prog_name, strerror(errno));
 
-  for (cp = str, dp = dst; (ch = *cp++); )
-    {
-      if (ch == '\\')
-	{
-	  ch = *cp++;
-	  switch (ch)
-	    {
-	    case '\\':	/* \\ -> \ */
-	      break;
+    for (cp = str, dp = dst; (ch = *cp++);) {
+        if (ch == '\\') {
+            ch = *cp++;
+            switch (ch) {
+                case '\\':    /* \\ -> \ */
+                    break;
 
-	    case 'a':	/* \a -> LF */
-	      ch = 10;
-	      break;
+                case 'a':    /* \a -> LF */
+                    ch = 10;
+                    break;
 
-	    case 'r':	/* \r -> CR */
-	      ch = 13;
-	      break;
+                case 'r':    /* \r -> CR */
+                    ch = 13;
+                    break;
 
-	    case 'n':	/* \n -> CR/LF */
-	      *dp++ = 13;
-	      ch = 10;
-	      break;
+                case 'n':    /* \n -> CR/LF */
+                    *dp++ = 13;
+                    ch = 10;
+                    break;
 
-	    case '0': case '1': case '2': case '3': case '4':
-	    case '5': case '6': case '7': case '8': case '9':
-	      ch = strtol (cp - 1, (char **) &cp, 8);
-	      break;
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    ch = strtol(cp - 1, (char **) &cp, 8);
+                    break;
 
-	    default:
-	      fprintf (stderr, "%s: ignoring unknown escape sequence "
-		       "`\\%c' in --add-header\n", prog_name, ch);
-	      break;
-	    }
-	}
-      *dp++ = ch;
+                default:
+                    fprintf(stderr, "%s: ignoring unknown escape sequence "
+                            "`\\%c' in --add-header\n", prog_name, ch);
+                    break;
+            }
+        }
+        *dp++ = ch;
     }
-  *len = dp - dst;
-  return dst;
+    *len = dp - dst;
+    return dst;
 }
 
 static void
-call_created (Event_Type et, Object *obj, Any_Type reg_arg, Any_Type arg)
-{
-  Call *c = (Call *) obj;
+call_created(Event_Type et, Object *obj, Any_Type reg_arg, Any_Type arg) {
+    Call *c = (Call *) obj;
 
-  assert (et == EV_CALL_NEW && object_is_call (obj));
+    assert(et == EV_CALL_NEW && object_is_call(obj));
 
-  if (method_len > 0)
-    call_set_method (c, param.method, method_len);
+    if (method_len > 0)
+        call_set_method(c, param.method, method_len);
 
-  if (extra_len > 0)
-    call_append_request_header (c, extra, extra_len);
+    if (extra_len > 0)
+        call_append_request_header(c, extra, extra_len);
 }
 
 
 static void
-init (void)
-{
-  Any_Type arg;
+init(void) {
+    Any_Type arg;
 
-  if (param.additional_header)
-    extra = unescape (param.additional_header, &extra_len);
+    if (param.additional_header)
+        extra = unescape(param.additional_header, &extra_len);
 
-  if (param.method)
-    method_len = strlen (param.method);
+    if (param.method)
+        method_len = strlen(param.method);
 
-  arg.l = 0;
-  event_register_handler (EV_CALL_NEW, call_created, arg);
+    arg.l = 0;
+    event_register_handler(EV_CALL_NEW, call_created, arg);
 }
 
 Load_Generator misc =
-  {
-    "Miscellaneous command line options",
-    init,
-    no_op,
-    no_op
-  };
+        {
+                "Miscellaneous command line options",
+                init,
+                no_op,
+                no_op
+        };

@@ -43,22 +43,22 @@
 
 #define NUM_TIMERS 25
 
-static Time     now;
+static Time now;
 
 struct Timer {
-	Time            time_started;
-	Time            timeout_delay;
-	bool            has_expired;
+    Time time_started;
+    Time timeout_delay;
+    bool has_expired;
 
-	/*
-	 * Callback function called when timer expires (timeout) 
-	 */
-	void            (*timeout_callback) (struct Timer * t, Any_Type arg);
+    /*
+     * Callback function called when timer expires (timeout)
+     */
+    void            (*timeout_callback)(struct Timer *t, Any_Type arg);
 
-	/*
-	 * Typically used as a void pointer to the data object being timed 
-	 */
-	Any_Type        timer_subject;
+    /*
+     * Typically used as a void pointer to the data object being timed
+     */
+    Any_Type timer_subject;
 };
 
 /*
@@ -80,24 +80,22 @@ static struct List *persistent_timers = NULL;
  * preferable with the timer_now function
  */
 Time
-timer_now_forced(void)
-{
-	struct timeval  tv;
+timer_now_forced(void) {
+    struct timeval tv;
 
-	gettimeofday(&tv, 0);
-	return tv.tv_sec + tv.tv_usec * 1e-6;
+    gettimeofday(&tv, 0);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
 }
 
 /*
  * Returns the current time. If timer caching is enabled then uses the cache.
  */
 Time
-timer_now(void)
-{
-	if (param.use_timer_cache)
-		return now;
-	else
-		return timer_now_forced();
+timer_now(void) {
+    if (param.use_timer_cache)
+        return now;
+    else
+        return timer_now_forced();
 }
 
 /*
@@ -106,100 +104,96 @@ timer_now(void)
  * Returns 0 upon a memory allocation error
  */
 bool
-timer_init(void)
-{
-	passive_timers = list_create();
-	if (passive_timers == NULL)
-		goto init_failure;
+timer_init(void) {
+    passive_timers = list_create();
+    if (passive_timers == NULL)
+        goto init_failure;
 
-	active_timers = list_create();
-	if (active_timers == NULL)
-		goto init_failure;
+    active_timers = list_create();
+    if (active_timers == NULL)
+        goto init_failure;
 
-	persistent_timers = list_create();
-	if (persistent_timers == NULL)
-		goto init_failure;
+    persistent_timers = list_create();
+    if (persistent_timers == NULL)
+        goto init_failure;
 
-	for (int i = 0; i < NUM_TIMERS; i++) {
-		Any_Type        a;
-		a.vp = malloc(sizeof(struct Timer));
+    for (int i = 0; i < NUM_TIMERS; i++) {
+        Any_Type a;
+        a.vp = malloc(sizeof(struct Timer));
 
-		if (a.vp == NULL)
-			goto init_failure;
+        if (a.vp == NULL)
+            goto init_failure;
 
-		if (list_push(passive_timers, a) == false)
-			goto init_failure;
-	}
+        if (list_push(passive_timers, a) == false)
+            goto init_failure;
+    }
 
-	now = timer_now_forced();
+    now = timer_now_forced();
 
-	return true;
+    return true;
 
-      init_failure:
-	fprintf(stderr, "%s.%s: %s\n", __FILE__, __func__, strerror(errno));
-	return false;
+    init_failure:
+    fprintf(stderr, "%s.%s: %s\n", __FILE__, __func__, strerror(errno));
+    return false;
 }
 
 /*
  * Frees all allocated timers, and timer queues
  */
 void
-timer_free_all(void)
-{
-	while (!is_list_empty(passive_timers)) {
-		Any_Type        a = list_pop(passive_timers);
-		free(a.vp);
-	}
-	list_free(passive_timers);
-	passive_timers = NULL;
+timer_free_all(void) {
+    while (!is_list_empty(passive_timers)) {
+        Any_Type a = list_pop(passive_timers);
+        free(a.vp);
+    }
+    list_free(passive_timers);
+    passive_timers = NULL;
 
-	while (!is_list_empty(active_timers)) {
-		Any_Type        a = list_pop(active_timers);
-		free(a.vp);
-	}
-	list_free(active_timers);
-	active_timers = NULL;
+    while (!is_list_empty(active_timers)) {
+        Any_Type a = list_pop(active_timers);
+        free(a.vp);
+    }
+    list_free(active_timers);
+    active_timers = NULL;
 
-	while (!is_list_empty(persistent_timers)) {
-		Any_Type        a = list_pop(persistent_timers);
-		free(a.vp);
-	}
-	list_free(persistent_timers);
-	persistent_timers = NULL;
+    while (!is_list_empty(persistent_timers)) {
+        Any_Type a = list_pop(persistent_timers);
+        free(a.vp);
+    }
+    list_free(persistent_timers);
+    persistent_timers = NULL;
 }
 
 /*
  * Checks whether a timer has expired
  */
 static bool
-timer_has_expired(Any_Type a)
-{
-	struct Timer   *t = a.vp;
+timer_has_expired(Any_Type a) {
+    struct Timer *t = a.vp;
 
-	/*
-	 * Only expire currently processing timers 
-	 */
-	if (t->has_expired == false) {
-		if (t->time_started + t->timeout_delay < timer_now()) {
-			t->has_expired = true;
-			(*t->timeout_callback) (t, t->timer_subject);
-			return true;
-		}
-	}
+    /*
+     * Only expire currently processing timers
+     */
+    if (t->has_expired == false) {
+        if (t->time_started + t->timeout_delay < timer_now()) {
+            t->has_expired = true;
+            (*t->timeout_callback)(t, t->timer_subject);
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 static bool
-timer_deactivate(Any_Type a)
-{
-	struct Timer   *t = a.vp;
+timer_deactivate(Any_Type a) {
+    struct Timer *t = a.vp;
 
-	/* TODO: Error check list_push */
-	if (t->has_expired == true)
-		list_push(passive_timers, a);
+    /* TODO: Error check list_push */
+    if (t->has_expired == true)
+        list_push(passive_timers, a);
 
-	return t->has_expired;
+    return t->has_expired;
 }
 
 /*
@@ -208,11 +202,10 @@ timer_deactivate(Any_Type a)
  * and then enqueued back into the passive timer queue
  */
 void
-timer_tick(void)
-{
-	now = timer_now_forced();
-	list_for_each(active_timers, &timer_has_expired);
-	list_remove_if_true(active_timers, &timer_deactivate);
+timer_tick(void) {
+    now = timer_now_forced();
+    list_for_each(active_timers, &timer_has_expired);
+    list_remove_if_true(active_timers, &timer_deactivate);
 }
 
 /*
@@ -221,56 +214,52 @@ timer_tick(void)
  * to malloc, but will allocate memory for a new counter if there are no
  * inactive timers available
  */
-struct Timer   *
-timer_schedule(void (*timeout) (struct Timer * t, Any_Type arg),
-	       Any_Type subject, Time delay)
-{
-	struct Timer   *t;
+struct Timer *
+timer_schedule(void (*timeout)(struct Timer *t, Any_Type arg),
+               Any_Type subject, Time delay) {
+    struct Timer *t;
 
-	if (!is_list_empty(passive_timers)) {
-		Any_Type        a = list_pop(passive_timers);
-		t = (struct Timer *) a.vp;
-	} else if ((t = malloc(sizeof(struct Timer))) == NULL)
-		return NULL;
+    if (!is_list_empty(passive_timers)) {
+        Any_Type a = list_pop(passive_timers);
+        t = (struct Timer *) a.vp;
+    } else if ((t = malloc(sizeof(struct Timer))) == NULL)
+        return NULL;
 
-	memset(t, 0, sizeof(struct Timer));
-	t->timeout_callback = timeout;
-	t->has_expired = false;
-	t->timer_subject = subject;
-	t->time_started = timer_now();
-	t->timeout_delay = delay;
+    memset(t, 0, sizeof(struct Timer));
+    t->timeout_callback = timeout;
+    t->has_expired = false;
+    t->timer_subject = subject;
+    t->time_started = timer_now();
+    t->timeout_delay = delay;
 
-	if (delay > 0)
-	{
-		Any_Type temp;
-		temp.vp = (void *)t;
-		list_push(active_timers, temp);
-	}
-	else
-	{
-		Any_Type temp;
-		temp.vp = (void *)t;
-		list_push(persistent_timers, temp);
-	}
+    if (delay > 0) {
+        Any_Type temp;
+        temp.vp = (void *) t;
+        list_push(active_timers, temp);
+    }
+    else {
+        Any_Type temp;
+        temp.vp = (void *) t;
+        list_push(persistent_timers, temp);
+    }
 
-	if (DBG > 2)
-		fprintf(stderr,
-			"timer_schedule: t=%p, delay=%gs, subject=%lx\n", t,
-			delay, subject.l);
+    if (DBG > 2)
+        fprintf(stderr,
+                "timer_schedule: t=%p, delay=%gs, subject=%lx\n", t,
+                delay, subject.l);
 
-	return t;
+    return t;
 }
 
 void
-timer_cancel(struct Timer *t)
-{
-	if (DBG > 2)
-		fprintf(stderr, "timer_cancel: t=%p\n", t);
+timer_cancel(struct Timer *t) {
+    if (DBG > 2)
+        fprintf(stderr, "timer_cancel: t=%p\n", t);
 
-	/*
-	 * A module MUST NOT call timer_cancel() for a timer that is currently 
-	 * being processed (whose timeout has expired).  
-	 */
+    /*
+     * A module MUST NOT call timer_cancel() for a timer that is currently
+     * being processed (whose timeout has expired).
+     */
 
-	t->has_expired = true;
+    t->has_expired = true;
 }

@@ -45,12 +45,11 @@
 /* Maximum header line length that we can process properly.  Longer
    lines will be treated as if they were only this long (i.e., they
    will be truncated).  */
-#define MAX_HDR_LINE_LEN	1024
+#define MAX_HDR_LINE_LEN    1024
 
 struct Call;
 
-typedef enum Conn_State
-  {
+typedef enum Conn_State {
     S_INITIAL,
     S_CONNECTING,
     S_CONNECTED,
@@ -63,61 +62,71 @@ typedef enum Conn_State
     S_REPLY_DONE,
     S_CLOSING,
     S_FREE
-  }
-Conn_State;
+}
+        Conn_State;
 
-typedef struct Conn
-  {
+typedef struct Conn {
     Object obj;
 
     Conn_State state;
     struct Conn *next;
-    struct Call *sendq;		/* calls whose request needs to be sent */
+    struct Call *sendq;
+    /* calls whose request needs to be sent */
     struct Call *sendq_tail;
-    struct Call *recvq;		/* calls waiting for a reply */
+    struct Call *recvq;
+    /* calls waiting for a reply */
     struct Call *recvq_tail;
     struct Timer *watchdog;
 
-    struct
-      {
-	Time time_connect_start;	/* time connect() got called */
-	u_int num_calls_completed;	/* # of calls that completed */
-      }
-    basic;			/* maintained by stat/stats_basic.c */
+    struct {
+        Time time_connect_start;
+        /* time connect() got called */
+        u_int num_calls_completed;    /* # of calls that completed */
+    }
+            basic;
+    /* maintained by stat/stats_basic.c */
 
     size_t hostname_len;
-    const char *hostname;	/* server's hostname (or 0 for default) */
+    const char *hostname;
+    /* server's hostname (or 0 for default) */
     size_t fqdname_len;
-    const char *fqdname;	/* fully qualified server name (or 0) */
-    int port;			/* server's port (or -1 for default) */
-    int	sd;			/* socket descriptor */
-    int myport;			/* local port number or -1 */
+    const char *fqdname;
+    /* fully qualified server name (or 0) */
+    int port;
+    /* server's port (or -1 for default) */
+    int sd;
+    /* socket descriptor */
+    int myport;            /* local port number or -1 */
     /* Since replies are read off the socket sequentially, much of the
        reply-processing related state can be kept here instead of in
        the reply structure: */
-    struct iovec line;		/* buffer used to parse reply headers */
-    size_t content_length;	/* content length (or INF if unknown) */
-    u_int has_body : 1;		/* does reply have a body? */
-    u_int is_chunked : 1;	/* is the reply chunked? */
-    char line_buf[MAX_HDR_LINE_LEN];	/* default line buffer */
+    struct iovec line;
+    /* buffer used to parse reply headers */
+    size_t content_length;
+    /* content length (or INF if unknown) */
+    u_int has_body : 1;
+    /* does reply have a body? */
+    u_int is_chunked : 1;
+    /* is the reply chunked? */
+    char line_buf[MAX_HDR_LINE_LEN];    /* default line buffer */
 
 #ifdef HAVE_SSL
     SSL *ssl;			/* SSL connection info */
 #endif
-  }
-Conn;
+}
+        Conn;
 
 extern int max_num_conn;
 extern Conn *conn;
 
 /* Initialize the new connection object C.  */
-extern void conn_init (Conn *c);
+extern void conn_init(Conn *c);
 
 /* Destroy the connection-specific state in connection object C.  */
-extern void conn_deinit (Conn *c);
+extern void conn_deinit(Conn *c);
 
-#define conn_new()	((Conn *) object_new (OBJ_CONN))
-#define conn_inc_ref(c)	object_inc_ref ((Object *) (c))
-#define conn_dec_ref(c)	object_dec_ref ((Object *) (c))
+#define conn_new()    ((Conn *) object_new (OBJ_CONN))
+#define conn_inc_ref(c)    object_inc_ref ((Object *) (c))
+#define conn_dec_ref(c)    object_dec_ref ((Object *) (c))
 
 #endif /* conn_h */

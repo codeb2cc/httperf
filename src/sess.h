@@ -41,28 +41,27 @@
 /* Sessions are not used by the httperf's core itself, but they are
    provided here for the benefit of workload generators that need such
    a notion (e.g., to represent users).  */
-typedef struct Sess
-  {
+typedef struct Sess {
     Object obj;
 #ifdef HAVE_SSL
     SSL *ssl;		/* SSL session (or NULL) */
 #endif /* HAVE_SSL */
-    u_int failed : 1;	/* did session fail? */
-  }
-Sess;
+    u_int failed : 1;    /* did session fail? */
+}
+        Sess;
 
 /* Initialize the new session object S.  */
-extern void sess_init (Sess *s);
+extern void sess_init(Sess *s);
 
 /* Destroy the session-specific state in session object S.  */
-extern void sess_deinit (Sess *s);
+extern void sess_deinit(Sess *s);
 
 /* Session S failed.  This causes EV_SESS_FAILED to be signalled and
    gives up the caller's reference to S.  */
-extern void sess_failure (Sess *s);
+extern void sess_failure(Sess *s);
 
-#define sess_new()	((Sess *) object_new (OBJ_SESS))
-#define sess_inc_ref(s)	object_inc_ref ((Object *) (s))
-#define sess_dec_ref(s)	object_dec_ref ((Object *) (s))
+#define sess_new()    ((Sess *) object_new (OBJ_SESS))
+#define sess_inc_ref(s)    object_inc_ref ((Object *) (s))
+#define sess_dec_ref(s)    object_dec_ref ((Object *) (s))
 
 #endif /* sess_h */

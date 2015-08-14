@@ -34,6 +34,6 @@
 #ifndef http_h
 #define http_h
 
-extern void http_process_reply_bytes (Call *c, char **buf, size_t *buf_len);
+extern void http_process_reply_bytes(Call *c, char **buf, size_t *buf_len);
 
 #endif /* http_h */

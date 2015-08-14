@@ -89,82 +89,77 @@
 static char *fbase, *fend, *fcurrent;
 
 static void
-set_uri (Event_Type et, Call * c)
-{
-  int len, did_wrap = 0;
-  const char *uri;
+set_uri(Event_Type et, Call *c) {
+    int len, did_wrap = 0;
+    const char *uri;
 
-  assert (et == EV_CALL_NEW && object_is_call (c));
+    assert(et == EV_CALL_NEW && object_is_call(c));
 
-  do
-    {
-      if (fcurrent >= fend)
-	{
-	  if (did_wrap)
-	    panic ("%s: %s does not contain any valid URIs\n",
-		   prog_name, param.wlog.file);
-	  did_wrap = 1;
+    do {
+        if (fcurrent >= fend) {
+            if (did_wrap)
+                panic("%s: %s does not contain any valid URIs\n",
+                      prog_name, param.wlog.file);
+            did_wrap = 1;
 
-	  /* We reached the end of the uri list so wrap around to the
-	     beginning.  If not looping, also ask for the test to stop
-	     as soon as possible (the current request will still go
-	     out, but httperf won't wait for its reply to show up).  */
-	  fcurrent = fbase;
-	  if (!param.wlog.do_loop)
-	    core_exit ();
-	}
-      uri = fcurrent;
-      len = strlen (fcurrent);
-      call_set_uri (c, uri, len);
-      fcurrent += len + 1;
+            /* We reached the end of the uri list so wrap around to the
+               beginning.  If not looping, also ask for the test to stop
+               as soon as possible (the current request will still go
+               out, but httperf won't wait for its reply to show up).  */
+            fcurrent = fbase;
+            if (!param.wlog.do_loop)
+                core_exit();
+        }
+        uri = fcurrent;
+        len = strlen(fcurrent);
+        call_set_uri(c, uri, len);
+        fcurrent += len + 1;
     }
-  while (len == 0);
+    while (len == 0);
 
-  if (verbose)
-    printf ("%s: accessing URI `%s'\n", prog_name, uri);
+    if (verbose)
+        printf("%s: accessing URI `%s'\n", prog_name, uri);
 }
 
 void
-init_wlog (void)
-{
-  struct stat st;
-  Any_Type arg;
-  int fd;
+init_wlog(void) {
+    struct stat st;
+    Any_Type arg;
+    int fd;
 
-  fd = open (param.wlog.file, O_RDONLY, 0);
-  if (fd == -1)
-    panic ("%s: can't open %s\n", prog_name, param.wlog.file);
+    fd = open(param.wlog.file, O_RDONLY, 0);
+    if (fd == -1)
+        panic("%s: can't open %s\n", prog_name, param.wlog.file);
 
-  fstat (fd, &st);
-  if (st.st_size == 0)
-    panic ("%s: file %s is empty\n", prog_name, param.wlog.file);
+    fstat(fd, &st);
+    if (st.st_size == 0)
+        panic("%s: file %s is empty\n", prog_name, param.wlog.file);
 
-  /* mmap anywhere in address space: */
-  fbase = (char *) mmap (0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (fbase == (char *) -1)
-    panic ("%s: can't mmap the file: %s\n", prog_name, strerror (errno));
+    /* mmap anywhere in address space: */
+    fbase = (char *) mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (fbase == (char *) -1)
+        panic("%s: can't mmap the file: %s\n", prog_name, strerror(errno));
 
-  close (fd);
+    close(fd);
 
-  /* set the upper boundary: */
-  fend = fbase + st.st_size;
-  /* set current entry: */
-  fcurrent = fbase;
+    /* set the upper boundary: */
+    fend = fbase + st.st_size;
+    /* set current entry: */
+    fcurrent = fbase;
 
-  arg.l = 0;
-  event_register_handler (EV_CALL_NEW, (Event_Handler) set_uri, arg);
+    arg.l = 0;
+    event_register_handler(EV_CALL_NEW, (Event_Handler) set_uri, arg);
 }
 
 static void
-stop_wlog (void)
-{
-  munmap (fbase, fend - fbase);
+stop_wlog(void) {
+    munmap(fbase, fend - fbase);
 }
 
 Load_Generator uri_wlog =
-  {
-    "Generates URIs based on a predetermined list",
-    init_wlog,
-    no_op,
-    stop_wlog
-  };
+        {
+                "Generates URIs based on a predetermined list",
+                init_wlog,
+                no_op,
+                stop_wlog
+        };

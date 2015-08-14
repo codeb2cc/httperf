@@ -56,134 +56,130 @@ Time duration_in_current_rate = 0;
    arrival spacing.  */
 
 static Time
-next_arrival_time_det (Rate_Generator *rg)
-{
-  return rg->rate->mean_iat;
+next_arrival_time_det(Rate_Generator * rg) {
+    return rg->rate->mean_iat;
 }
 
 static Time
-next_arrival_time_uniform (Rate_Generator *rg)
-{
-  Time lower, upper;
+next_arrival_time_uniform(Rate_Generator * rg) {
+    Time lower, upper;
 
-  lower = rg->rate->min_iat;
-  upper = rg->rate->max_iat;
+    lower = rg->rate->min_iat;
+    upper = rg->rate->max_iat;
 
-  return lower + (upper - lower)*erand48 (rg->xsubi);
+    return lower + (upper - lower) * erand48(rg->xsubi);
 }
 
 static Time
-next_arrival_time_exp (Rate_Generator *rg)
-{
-  Time mean = rg->rate->mean_iat;
+next_arrival_time_exp(Rate_Generator * rg) {
+    Time mean = rg->rate->mean_iat;
 
-  return -mean*log (1.0 - erand48 (rg->xsubi));
+    return -mean * log(1.0 - erand48(rg->xsubi));
 }
 
 static Time
-next_arrival_time_variable (Rate_Generator *rg)
-{
-  Time next;
+next_arrival_time_variable(Rate_Generator * rg) {
+    Time next;
 
-  next = rg->rate->iat[current_rate];
-  duration_in_current_rate += next;
+    next = rg->rate->iat[current_rate];
+    duration_in_current_rate += next;
 
-  if (duration_in_current_rate >= rg->rate->duration[current_rate])
-    {
-      current_rate++;
-      if (current_rate >= rg->rate->numRates)
-	current_rate = 0;
-      duration_in_current_rate = 0;
+    if (duration_in_current_rate >= rg->rate->duration[current_rate]) {
+        current_rate++;
+        if (current_rate >= rg->rate->numRates)
+            current_rate = 0;
+        duration_in_current_rate = 0;
     }
-  return (next);
+    return (next);
 }
 
 static void
-tick (struct Timer *t, Any_Type arg)
-{
-  Time delay, now = timer_now ();
-  Rate_Generator *rg = arg.vp;
+tick(struct Timer *t, Any_Type arg) {
+    Time delay, now = timer_now();
+    Rate_Generator *rg = arg.vp;
 
-  rg->timer = 0;
-  if (rg->done)
-    return;
+    rg->timer = 0;
+    if (rg->done)
+        return;
 
-  while (now > rg->next_time)
-    {
-      delay = (*rg->next_interarrival_time) (rg);
-      if (verbose > 2)
-	fprintf (stderr, "next arrival delay = %.4f\n", delay);
-      rg->next_time += delay;
-      rg->done = ((*rg->tick) (rg->arg) < 0);
-      if (rg->done)
-	return;
+    while (now > rg->next_time) {
+        delay = (*rg->next_interarrival_time)(rg);
+        if (verbose > 2)
+            fprintf(stderr, "next arrival delay = %.4f\n", delay);
+        rg->next_time += delay;
+        rg->done = ((*rg->tick)(rg->arg) < 0);
+        if (rg->done)
+            return;
     }
-  rg->timer = timer_schedule ((Timer_Callback) tick, arg, rg->next_time - now);
+    rg->timer = timer_schedule((Timer_Callback) tick, arg, rg->next_time - now);
 }
 
 static void
-done (Event_Type type, Object *obj, Any_Type reg_arg, Any_Type call_arg)
-{
-  Rate_Generator *rg = reg_arg.vp;
+done(Event_Type type, Object *obj, Any_Type reg_arg, Any_Type call_arg) {
+    Rate_Generator *rg = reg_arg.vp;
 
-  if (rg->done)
-    return;
-  rg->done = ((*rg->tick) (rg->arg) < 0);
+    if (rg->done)
+        return;
+    rg->done = ((*rg->tick)(rg->arg) < 0);
 }
 
 void
-rate_generator_start (Rate_Generator *rg, Event_Type completion_event)
-{
-  Time (*func) (struct Rate_Generator *rg);
-  Any_Type arg;
-  Time delay;
+rate_generator_start(Rate_Generator *rg, Event_Type completion_event) {
+    Time(*func)(
+    struct Rate_Generator *rg);
+    Any_Type arg;
+    Time delay;
 
-  /* Initialize random number generator with the init values here, all
-     rate generators (although independent) will follow the same
-     sequence of random values.  We factor in the client's id to make
-     sure no two machines running httperf generate identical random
-     numbers.  May want to pass these values as args to
-     rate_generator_start in the future.  */
-  rg->xsubi[0] = 0x1234 ^ param.client.id;
-  rg->xsubi[1] = 0x5678 ^ (param.client.id << 8);
-  rg->xsubi[2] = 0x9abc ^ ~param.client.id;
+    /* Initialize random number generator with the init values here, all
+       rate generators (although independent) will follow the same
+       sequence of random values.  We factor in the client's id to make
+       sure no two machines running httperf generate identical random
+       numbers.  May want to pass these values as args to
+       rate_generator_start in the future.  */
+    rg->xsubi[0] = 0x1234 ^ param.client.id;
+    rg->xsubi[1] = 0x5678 ^ (param.client.id << 8);
+    rg->xsubi[2] = 0x9abc ^ ~param.client.id;
 
-  arg.vp = rg;
-  if (rg->rate->rate_param > 0.0)
-    {
-      switch (rg->rate->dist)
-	{
-	case DETERMINISTIC: func = next_arrival_time_det; break;
-	case UNIFORM:	    func = next_arrival_time_uniform; break;
-	case EXPONENTIAL:   func = next_arrival_time_exp; break;
-	case VARIABLE:      func = next_arrival_time_variable; break;
-	default:
-	  fprintf (stderr, "%s: unrecognized interarrival distribution %d\n",
-		   prog_name, rg->rate->dist);
-	  exit (-1);
-	}
-      rg->next_interarrival_time = func;
-      delay = (*func) (rg);
-      /* bias `next time' so that timeouts are rounded to the closest
-         tick: */
-      rg->next_time = timer_now () + delay;
-      rg->timer = timer_schedule ((Timer_Callback) tick, arg, delay);
+    arg.vp = rg;
+    if (rg->rate->rate_param > 0.0) {
+        switch (rg->rate->dist) {
+            case DETERMINISTIC:
+                func = next_arrival_time_det;
+                break;
+            case UNIFORM:
+                func = next_arrival_time_uniform;
+                break;
+            case EXPONENTIAL:
+                func = next_arrival_time_exp;
+                break;
+            case VARIABLE:
+                func = next_arrival_time_variable;
+                break;
+            default:
+                fprintf(stderr, "%s: unrecognized interarrival distribution %d\n",
+                        prog_name, rg->rate->dist);
+                exit(-1);
+        }
+        rg->next_interarrival_time = func;
+        delay = (*func)(rg);
+        /* bias `next time' so that timeouts are rounded to the closest
+           tick: */
+        rg->next_time = timer_now() + delay;
+        rg->timer = timer_schedule((Timer_Callback) tick, arg, delay);
     }
-  else
-    /* generate callbacks sequentially: */
-    event_register_handler (completion_event, done, arg);
+    else
+        /* generate callbacks sequentially: */
+        event_register_handler(completion_event, done, arg);
 
-  rg->start = timer_now ();
-  rg->done = ((*rg->tick) (rg->arg) < 0);
+    rg->start = timer_now();
+    rg->done = ((*rg->tick)(rg->arg) < 0);
 }
 
 void
-rate_generator_stop (Rate_Generator *rg)
-{
-  if (rg->timer)
-    {
-      timer_cancel (rg->timer);
-      rg->timer = 0;
+rate_generator_stop(Rate_Generator * rg) {
+    if (rg->timer) {
+        timer_cancel(rg->timer);
+        rg->timer = 0;
     }
-  rg->done = 1;
+    rg->done = 1;
 }

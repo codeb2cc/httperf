@@ -35,14 +35,17 @@
 
 #include <netinet/in.h>
 
-extern void core_init (void);
-extern struct sockaddr_in *core_intern_addr (const char *hostname,
-					     size_t hostname_len, int port);
-extern int core_connect (Conn *conn);
-extern int core_send (Conn *conn, Call *call);
-extern void core_close (Conn *conn);
+extern void core_init(void);
 
-extern void core_loop (void);
-extern void core_exit (void);
+extern struct sockaddr_in *core_intern_addr(const char *hostname,
+                                            size_t hostname_len, int port);
+
+extern int core_connect(Conn * conn);
+extern int core_send(Conn * conn, Call * call);
+extern void core_close(Conn * conn);
+
+extern void core_loop(void);
+
+extern void core_exit(void);
 
 #endif /* core_h */
