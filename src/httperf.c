@@ -1,56 +1,56 @@
 /*
  * Copyright (C) 2000-2007 Hewlett-Packard Company
  * Copyright (C) 2007 Ted Bullock <tbullock@comlore.com>
- * 
+ *
  * This file is part of httperf, a web server performance measurment tool.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
  * any later version.
- * 
+ *
  * In addition, as a special exception, the copyright holders give permission
  * to link the code of this work with the OpenSSL project's "OpenSSL" library
- * (or with modified versions of it that use the same license as the "OpenSSL" 
+ * (or with modified versions of it that use the same license as the "OpenSSL"
  * library), and distribute linked combinations including the two.  You must
  * obey the GNU General Public License in all respects for all of the code
  * used other than "OpenSSL".  If you modify this file, you may extend this
  * exception to your version of the file, but you are not obligated to do so.
  * If you do not wish to do so, delete this exception statement from your
  * version.
- * 
- * This program is distributed in the hope that it will be useful, but WITHOUT 
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc., 51
- * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA 
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
 /*
  * Fundamentals:
- * 
+ *
  * There are three subsystems to httperf:
- * 
+ *
  * 1) The load generator which determines what URI is fetched next.
- * 
+ *
  * 2) The core engine that handles the mechanics of issuing a request.
- * 
+ *
  * 3) The instrumentation infrastructure that measures various aspects of the
  * transaction(s).
- * 
- * Since there is considerable potential variation in all three, it seems like 
+ *
+ * Since there is considerable potential variation in all three, it seems like
  * an event-based approach might be ideal in tying the three together.
  * Ideally, it should be possible to write a new load generator without
- * modifications to the other subsystems.  Similarly, it should be possible to 
- * add instrumentation without requiring changes to the load generator or http 
+ * modifications to the other subsystems.  Similarly, it should be possible to
+ * add instrumentation without requiring changes to the load generator or http
  * engine.
- * 
+ *
  * Axioms: - The only point at which the client will fall back is if the
  * client itself is overloaded.  There is no point trying to fix up this
- * case---simply declare defeat and abort the test. 
+ * case---simply declare defeat and abort the test.
  */
 #include "config.h"
 
@@ -140,6 +140,12 @@ static struct option longopts[] = {
 	{"ssl", no_argument, &param.use_ssl, 1},
 	{"ssl-ciphers", required_argument, (int *) &param.ssl_cipher_list, 0},
 	{"ssl-no-reuse", no_argument, &param.ssl_reuse, 0},
+	{"ssl-certificate", required_argument, (int *) &param.ssl_cert,     0},
+	{"ssl-key",      required_argument, (int *) &param.ssl_key,         0},
+	{"ssl-verify",   optional_argument, (int *) &param.ssl_verify,      0},
+	{"ssl-ca-file",  required_argument, (int *) &param.ssl_ca_file,     0},
+	{"ssl-ca-path",  required_argument, (int *) &param.ssl_ca_path,     0},
+	{"ssl-protocol", required_argument, &param.ssl_protocol,            0},
 #endif
 	{"think-timeout", required_argument, (int *) &param.think_timeout, 0},
 	{"timeout", required_argument, (int *) &param.timeout, 0},
@@ -170,6 +176,9 @@ usage(void)
 	       "\t[--server S] [--server-name S] [--port N] [--uri S] \n"
 #ifdef HAVE_SSL
 	       "\t[--ssl] [--ssl-ciphers L] [--ssl-no-reuse]\n"
+	       "\t[--ssl-certificate file] [--ssl-key file]\n"
+	       "\t[--ssl-ca-file file] [--ssl-ca-path path]\n"
+	       "\t[--ssl-verify [yes|no]] [--ssl-protocol S]\n"
 #endif
 	       "\t[--think-timeout X] [--timeout X] [--verbose] [--version]\n"
 	       "\t[--wlog y|n,file] [--wsess N,N,X] [--wsesslog N,X,file]\n"
@@ -202,7 +211,7 @@ perf_sample(struct Timer *t, Any_Type regarg)
 	event_signal(EV_PERF_SAMPLE, 0, callarg);
 
 	/*
-	 * prepare for next sample interval: 
+	 * prepare for next sample interval:
 	 */
 	perf_sample_start = timer_now();
 	if (timer_schedule(perf_sample, regarg, RATE_INTERVAL) == NULL)
@@ -243,7 +252,7 @@ main(int argc, char **argv)
 	/*
 	 * This works around a bug in earlier versions of FreeBSD that cause
 	 * non-finite IEEE arithmetic to cause SIGFPE instead of the
-	 * non-finite arithmetic as defined by IEEE.  
+	 * non-finite arithmetic as defined by IEEE.
 	 */
 	fpsetmask(0);
 #endif
@@ -262,17 +271,19 @@ main(int argc, char **argv)
 	param.num_conns = 1;
 	/*
 	 * These should be set to the minimum of 2*bandwidth*delay and the
-	 * maximum request/reply size for single-call connections.  
+	 * maximum request/reply size for single-call connections.
 	 */
 	param.send_buffer_size = 4096;
 	param.recv_buffer_size = 16384;
 	param.rate.dist = DETERMINISTIC;
 #ifdef HAVE_SSL
 	param.ssl_reuse = 1;
+	param.ssl_verify = 0;
+	param.ssl_protocol = 0;
 #endif
 
 	/*
-	 * get program name: 
+	 * get program name:
 	 */
 	prog_name = strrchr(argv[0], '/');
 	if (prog_name)
@@ -281,7 +292,7 @@ main(int argc, char **argv)
 		prog_name = argv[0];
 
 	/*
-	 * process command line options: 
+	 * process command line options:
 	 */
 	while ((ch =
 		getopt_long(argc, argv, "d:hvV", longopts, &longindex)) >= 0) {
@@ -407,7 +418,7 @@ main(int argc, char **argv)
 					param.rate.mean_iat =
 					    1 / param.rate.rate_param;
 				param.rate.dist = DETERMINISTIC;
-			} else if (flag == &param.rate.mean_iat) {	/* --period 
+			} else if (flag == &param.rate.mean_iat) {	/* --period
 									 */
 				param.rate.dist = DETERMINISTIC;
 				if (!isdigit(*optarg))
@@ -436,7 +447,7 @@ main(int argc, char **argv)
 
 				/*
 				 * remaining params depend on selected
-				 * distribution: 
+				 * distribution:
 				 */
 				errno = 0;
 				switch (param.rate.dist) {
@@ -624,6 +635,43 @@ main(int argc, char **argv)
 #ifdef HAVE_SSL
 			else if (flag == &param.ssl_cipher_list)
 				param.ssl_cipher_list = optarg;
+			else if (flag == &param.ssl_cert)
+				  param.ssl_cert = optarg;
+			else if (flag == &param.ssl_key)
+				  param.ssl_key = optarg;
+			else if (flag == &param.ssl_verify)
+			{
+				if (!optarg)
+					param.ssl_verify = 1;
+				else
+					switch (tolower (optarg[0]))
+					{
+						case 'y': param.ssl_verify = 1; break;
+						case 'n': param.ssl_verify = 0; break;
+						default:  param.ssl_verify = 0; break;
+					}
+			}
+			else if (flag == &param.ssl_ca_file)
+				param.ssl_ca_file = optarg;
+			else if (flag == &param.ssl_ca_path)
+				param.ssl_ca_path = optarg;
+			else if (flag == &param.ssl_protocol)
+			{
+				if (strcasecmp (optarg, "auto") == 0)
+					param.ssl_protocol = 0;
+				else if (strcasecmp (optarg, "SSLv2") == 0)
+					param.ssl_protocol = 2;
+				else if (strcasecmp (optarg, "SSLv3") == 0)
+					param.ssl_protocol = 3;
+				else if (strcasecmp (optarg, "TLSv1") == 0)
+					param.ssl_protocol = 4;
+				else
+				{
+					fprintf (stderr, "%s: illegal SSL protocol %s\n",
+						prog_name, optarg);
+					exit (1);
+				}
+			}
 #endif
 			else if (flag == &param.uri)
 				param.uri = optarg;
@@ -780,18 +828,18 @@ main(int argc, char **argv)
 				optarg = end + 1;
 
 				/*
-				 * simulate parsing of string 
+				 * simulate parsing of string
 				 */
 				param.wsesslog.file = optarg;
 				if ((end = strchr(optarg, ',')) == NULL)
 					/*
-					 * must be last param, position end at 
-					 * final \0 
+					 * must be last param, position end at
+					 * final \0
 					 */
 					end = optarg + strlen(optarg);
 				else
 					/*
-					 * terminate end of string 
+					 * terminate end of string
 					 */
 					*end++ = '\0';
 				optarg = end;
@@ -895,7 +943,7 @@ main(int argc, char **argv)
 			 * Invalid or ambiguous option name or extraneous
 			 * parameter. getopt_long () already issued an
 			 * explanation to the user, so all we do is call it
-			 * quites.  
+			 * quites.
 			 */
 			exit(1);
 
@@ -914,14 +962,23 @@ main(int argc, char **argv)
 		if (param.port < 0)
 			param.port = 443;
 
+		SSL_library_init();
 		SSL_load_error_strings();
+		SSLeay_add_all_algorithms();
 		SSLeay_add_ssl_algorithms();
 
-		/*
-		 * for some strange reason, SSLv23_client_method () doesn't
-		 * work here 
-		 */
-		ssl_ctx = SSL_CTX_new(SSLv3_client_method());
+		switch (param.ssl_protocol)
+		{
+			/* 0/auto for SSLv23 */
+			case 0: ssl_ctx = SSL_CTX_new (SSLv23_client_method ()); break;
+			/* 2/SSLv2 */
+			case 2: ssl_ctx = SSL_CTX_new (SSLv2_client_method ()); break;
+			/* 3/SSLv3 */
+			case 3: ssl_ctx = SSL_CTX_new (SSLv3_client_method ()); break;
+			/* 4/TLSv1 */
+			case 4: ssl_ctx = SSL_CTX_new (TLSv1_client_method ()); break;
+		}
+
 		if (!ssl_ctx) {
 			ERR_print_errors_fp(stderr);
 			exit(-1);
@@ -929,7 +986,56 @@ main(int argc, char **argv)
 
 		memset(buf, 0, sizeof(buf));
 		RAND_seed(buf, sizeof(buf));
+
+	/* set server certificate verification */
+	if (param.ssl_verify == 1)
+		SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
+	else
+		SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+	/* set default certificate authority verification path */
+	SSL_CTX_set_default_verify_paths (ssl_ctx);
+
+	/* load extra certificate authority files and paths */
+	if (param.ssl_ca_file || param.ssl_ca_path)
+	{
+		int ssl_err = SSL_CTX_load_verify_locations
+		(ssl_ctx, param.ssl_ca_file, param.ssl_ca_path);
+		if (DBG > 2)
+			fprintf (stderr, "SSL_CTX_load_verify_locations returned %d\n", ssl_err);
 	}
+
+	/* if using client SSL authentication, load the certificate file */
+	if (param.ssl_cert)
+	{
+		int ssl_err = SSL_CTX_use_certificate_file
+		(ssl_ctx, param.ssl_cert, SSL_FILETYPE_PEM);
+		if (DBG > 2)
+			fprintf (stderr, "SSL_CTX_use_certificate_file returned %d\n", ssl_err);
+	}
+
+	/* also load the client key */
+	if (param.ssl_key)
+	{
+		int ssl_err = SSL_CTX_use_PrivateKey_file
+		(ssl_ctx, param.ssl_key, SSL_FILETYPE_PEM);
+		if (DBG > 2)
+			fprintf (stderr, "SSL_CTX_use_PrivateKey_file returned %d\n", ssl_err);
+	}
+
+	/* check client certificate and key consistency */
+	if (param.ssl_cert && param.ssl_key)
+	{
+		int ssl_err = SSL_CTX_check_private_key (ssl_ctx);
+		if (DBG > 2)
+			fprintf (stderr, "SSL_CTX_check_private_key returned %d\n", ssl_err);
+		if (!ssl_err)
+		{
+			fprintf (stderr, "SSL certificate and key failed consistency check\n");
+			exit (1);
+		}
+	}
+}
 #endif
 	if (param.port < 0)
 		param.port = 80;
@@ -951,7 +1057,7 @@ main(int argc, char **argv)
 		gen[num_gen++] = &misc;
 
 	/*
-	 * echo command invocation for logging purposes: 
+	 * echo command invocation for logging purposes:
 	 */
 	printf("%s", prog_name);
 	if (verbose)
@@ -1013,7 +1119,7 @@ main(int argc, char **argv)
 		case DETERMINISTIC:
 			/*
 			 * for backwards compatibility, continue to use
-			 * --rate: 
+			 * --rate:
 			 */
 			printf(" --rate=%g", param.rate.rate_param);
 			break;
@@ -1056,8 +1162,19 @@ main(int argc, char **argv)
 		printf(" --ssl");
 	if (param.ssl_cipher_list)
 		printf(" --ssl-ciphers=%s", param.ssl_cipher_list);
-	if (!param.ssl_reuse)
-		printf(" --ssl-no-reuse");
+	if (!param.ssl_reuse) printf(" --ssl-no-reuse");
+	if (param.ssl_cert) printf(" --ssl-cert=%s", param.ssl_cert);
+	if (param.ssl_key) printf(" --ssl-key=%s", param.ssl_key);
+	if (param.ssl_ca_file) printf(" --ssl-ca-file=%s", param.ssl_ca_file);
+	if (param.ssl_ca_path) printf(" --ssl-ca-path=%s", param.ssl_ca_path);
+	if (param.ssl_verify) printf(" --ssl-verify");
+	switch (param.ssl_protocol)
+	{
+		case 0: printf(" --ssl-protocol=auto");  break;
+		case 2: printf(" --ssl-protocol=SSLv2"); break;
+		case 3: printf(" --ssl-protocol=SSLv3"); break;
+		case 4: printf(" --ssl-protocol=TLSv1"); break;
+}
 #endif
 	if (param.additional_header)
 		printf(" --add-header='%s'", param.additional_header);
@@ -1068,7 +1185,7 @@ main(int argc, char **argv)
 	if (param.wsesslog.num_sessions) {
 		/*
 		 * This overrides any --wsess, --num-conns, --num-calls,
-		 * --burst-length and any uri generator 
+		 * --burst-length and any uri generator
 		 */
 		printf(" --wsesslog=%u,%.3f,%s", param.wsesslog.num_sessions,
 		       param.wsesslog.think_time, param.wsesslog.file);
@@ -1111,12 +1228,12 @@ main(int argc, char **argv)
 
 	/*
 	 * Update `now'.  This is to keep things accurate even when some of
-	 * the initialization routines take a long time to execute.  
+	 * the initialization routines take a long time to execute.
 	 */
 	timer_now_forced();
 
 	/*
-	 * ensure that clients sample rates at different times: 
+	 * ensure that clients sample rates at different times:
 	 */
 	t = (param.client.id + 1.0) * RATE_INTERVAL / param.client.num_clients;
 	arg.l = 0;
